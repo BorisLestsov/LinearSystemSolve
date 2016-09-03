@@ -14,10 +14,12 @@ int main(int argc, char* argv[]) {
     f >> m;
     matrix<double> matr(n, m);
     fill_matrix(matr, f);
-    print_matrix(matr, O_FXD, 2);
+    print_matrix(matr, O_FXD, 2, cout);
+
+
+
+
     f.close();
-
-
 
     return 0;
 }

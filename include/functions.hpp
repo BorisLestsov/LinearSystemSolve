@@ -3,6 +3,7 @@
 
 #include "../include/Exception.hpp"
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -15,16 +16,16 @@ namespace Func {
     #define O_SCI 0
     #define O_FXD 1
     template<typename T>
-    void print_matrix(const matrix<T> &m, int o_type = O_FXD, int precision = 8) {
+    void print_matrix(const matrix<T> & m, int o_type = O_FXD, int precision = 8, ostream& stream = cout) {
         int width;
 
         switch (o_type) {
             case O_SCI:
-                cout << scientific << setprecision(precision);
+                stream << scientific << setprecision(precision);
                 width = precision + 8;
                 break;
             case O_FXD:
-                cout << fixed << setprecision(precision);
+                stream << fixed << setprecision(precision);
                 width = precision + 4;
                 break;
             default:
@@ -32,9 +33,9 @@ namespace Func {
         }
         for (uint i = 0; i < m.size1(); ++i) {
             for (uint j = 0; j < m.size2(); ++j) {
-                cout << setw(width) << m(i, j);
+                stream << setw(width) << m(i, j);
             }
-            cout << endl;
+            stream << endl;
         }
     }
 
@@ -46,5 +47,18 @@ namespace Func {
         }
     }
 
+    template <typename T>
+    void swap_matrix_rows(matrix<T>& m, uint i, uint j) {
+        matrix_row< matrix<double>> rowa (m, i);
+        matrix_row< matrix<double>> rowb (m, j);
+        rowa.swap(rowb);
+    }
+
+    template <typename T>
+    void swap_matrix_columns(matrix<T>& m, uint i, uint j) {
+        matrix_column< matrix<double>> cola (m, i);
+        matrix_column< matrix<double>> colb (m, j);
+        cola.swap(colb);
+    }
 }
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP
