@@ -3,5 +3,6 @@ project(LinearSystemSolve)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp Exception.cpp Exception.hpp)
+set(SOURCE_FILES source/LinSolve_app.cpp source/Exception.cpp)
+include_directories(include)
 add_executable(LinearSystemSolve ${SOURCE_FILES})

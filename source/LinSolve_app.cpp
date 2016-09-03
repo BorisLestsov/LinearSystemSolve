@@ -1,7 +1,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <iostream>
 #include <iomanip>
-#include "Exception.hpp"
+#include "../include/Exception.hpp"
 
 using namespace std;
 using namespace boost::numeric::ublas;
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     int n = atoi(argv[2]);
     int m = atoi(argv[3]);
 
-    matrix<double> matr(5, 6);
+    matrix<double> matr(n, m);
     print_matrix(matr, O_FXD, 2);
 
 

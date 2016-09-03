@@ -1,4 +1,4 @@
-#include "Exception.hpp"
+#include "../include/Exception.hpp"
 #include <cstring>
 
 Exception::Exception(const char * str){
