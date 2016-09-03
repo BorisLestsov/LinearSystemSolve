@@ -6,6 +6,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/range/algorithm/copy.hpp>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -73,17 +74,34 @@ namespace Func {
     boost_vector<T> system_solve(matrix<T>& m){
 
         //1st step - make matrix upper triangular
-        for (uint j = 0; j < m.size1(); ++j) {
-            matrix_row<matrix<T>> step_row(m, j);
-            step_row /= (T) step_row(j);
-            for (uint i = j + 1; i < m.size1(); ++i) {
-                matrix_row<matrix<T>> div_row(m, i);
-                div_row -= step_row * ((T) div_row(j));
+        for (uint i = 0; i < m.size1(); ++i) {
+            matrix_row<matrix<T>> step_row(m, i);
+            step_row /= (T) step_row(i);
+            for (uint j = i + 1; j < m.size1(); ++j) {
+                matrix_row<matrix<T>> div_row(m, j);
+                div_row -= step_row * ((T) div_row(i));
             }
+            /*print_matrix(m);
+            std::cout << endl;*/
         }
         print_matrix(m);
+        std::cout << endl;
 
-        return boost_vector<T>();
+        //2nd step
+        boost_vector<T> sol(m.size2() - 1);
+        for (uint i = (uint) m.size2() - 1; i-- > 0;) {
+            sol(i) = m(i, m.size2() - 1);
+            for (uint j = (uint) m.size2() - 1 ; j-- > i+1;){
+                sol(i) -= m(i, j) * sol(j);
+            }
+        }
+        std::cout << sol;
+        /*matrix_row<matrix<T>> step_row(m, 0);
+        std::cout << step_row << std::endl;
+        boost_vector<T> vec(step_row.size());
+        std::copy(step_row.begin(), step_row.end(), vec.begin());
+        std::cout << vec;*/
+        return boost_vector<T>(0);
     }
 }
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP
