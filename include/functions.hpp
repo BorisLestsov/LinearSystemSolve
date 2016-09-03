@@ -4,6 +4,8 @@
 #include "../include/Exception.hpp"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,12 +13,18 @@
 using namespace std;
 using namespace boost::numeric::ublas;
 
+template <typename T>
+using boost_vector = boost::numeric::ublas::vector<T>;
+
 namespace Func {
 
     #define O_SCI 0
     #define O_FXD 1
     template<typename T>
-    void print_matrix(const matrix<T> & m, int o_type = O_FXD, int precision = 8, ostream& stream = cout) {
+    void print_matrix(const matrix<T> & m,
+                      int o_type = O_FXD,
+                      int precision = 8,
+                      ostream& stream = cout) throw(Exception) {
         int width;
 
         switch (o_type) {
@@ -59,6 +67,23 @@ namespace Func {
         matrix_column< matrix<double>> cola (m, i);
         matrix_column< matrix<double>> colb (m, j);
         cola.swap(colb);
+    }
+
+    template <typename T>
+    boost_vector<T> system_solve(matrix<T>& m){
+
+        //1st step - make matrix upper triangular
+        for (uint j = 0; j < m.size1(); ++j) {
+            matrix_row<matrix<T>> step_row(m, j);
+            step_row /= (T) step_row(j);
+            for (uint i = j + 1; i < m.size1(); ++i) {
+                matrix_row<matrix<T>> div_row(m, i);
+                div_row -= step_row * ((T) div_row(j));
+            }
+        }
+        print_matrix(m);
+
+        return boost_vector<T>();
     }
 }
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP
