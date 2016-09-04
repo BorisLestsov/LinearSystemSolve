@@ -74,12 +74,32 @@ namespace Func {
     boost_vector<T> system_solve(matrix<T>& m){
 
         //1st step - make matrix upper triangular
-        for (uint i = 0; i < m.size1(); ++i) {
+        uint i, j;
+        for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
+            if (m (i, j) == 0) {
+                matrix_row<matrix<T>> zero_row(m, i);
+                bool found = false;
+                for (uint k = i + 1; k < m.size1(); ++k)
+                    if (m(k, j) != 0) {
+                        matrix_row<matrix<T>> non_zero_row(m, k);
+                        non_zero_row.swap(zero_row);
+                        found = true;
+                        break;
+                    }
+                if (!found){
+                    --i;
+                    continue;
+                }
+            }
+            /*print_matrix(m);
+            std::cout << endl;*/
             matrix_row<matrix<T>> step_row(m, i);
-            step_row /= (T) step_row(i);
-            for (uint j = i + 1; j < m.size1(); ++j) {
-                matrix_row<matrix<T>> div_row(m, j);
-                div_row -= step_row * ((T) div_row(i));
+            step_row /= (T) step_row(j);
+            for (uint k = i + 1; k < m.size1(); ++k) {
+                matrix_row<matrix<T>> div_row(m, k);
+                //std::cout << div_row << endl;
+                div_row -= step_row * ((T) div_row(j));
+                //std::cout << div_row << endl;
             }
             /*print_matrix(m);
             std::cout << endl;*/
@@ -88,20 +108,36 @@ namespace Func {
         std::cout << endl;
 
         //2nd step
-        boost_vector<T> sol(m.size2() - 1);
-        for (uint i = (uint) m.size2() - 1; i-- > 0;) {
-            sol(i) = m(i, m.size2() - 1);
-            for (uint j = (uint) m.size2() - 1 ; j-- > i+1;){
-                sol(i) -= m(i, j) * sol(j);
+        if( m(m.size1() - 1, m.size2() - 1) == 0){
+            for (i = (uint) m.size1() - 1; i-- > 0;) {
+                if (m(i, m.size2() - 1) != 0) {
+                    if (m(i, m.size2() - 2) == 0){
+                        cout << "No solutions exist" << endl;
+                        return boost_vector<T>(0);
+                    } else {
+                        cout << "Infinite amount of solutions" << endl;
+                        return boost_vector<T>(0);
+                    }
+                }
+            }
+        } else {
+            if (m(m.size1() - 1, m.size2() - 2) == 0){
+                cout << "No solutions exist" << endl;
+                return boost_vector<T>(0);
+            } else {
+                boost_vector<T> sol(m.size2() - 1);
+                for (i = (uint) m.size2() - 1; i-- > 0;) {
+                    sol(i) = m(i, m.size2() - 1);
+                    for (j = (uint) m.size2() - 1 ; j-- > i+1;){
+                        sol(i) -= m(i, j) * sol(j);
+                    }
+                }
+                boost_vector<T> vec(sol.size());
+                std::copy(sol.begin(), sol.end(), vec.begin());
+                std::cout << "Solution:" << endl << vec << endl;
+                return vec;
             }
         }
-        std::cout << sol;
-        /*matrix_row<matrix<T>> step_row(m, 0);
-        std::cout << step_row << std::endl;
-        boost_vector<T> vec(step_row.size());
-        std::copy(step_row.begin(), step_row.end(), vec.begin());
-        std::cout << vec;*/
-        return boost_vector<T>(0);
     }
 }
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP

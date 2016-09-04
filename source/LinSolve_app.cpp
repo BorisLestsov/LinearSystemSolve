@@ -26,7 +26,8 @@ int main(int argc, char* argv[]) {
 
     fill_matrix(matr, f);
     f.close();
-    print_matrix(matr, O_FXD, 2);
+    print_matrix(matr);
+    cout << endl;
     system_solve(matr);
 
     return 0;
