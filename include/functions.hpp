@@ -17,6 +17,8 @@ using namespace boost::numeric::ublas;
 template <typename T>
 using boost_vector = boost::numeric::ublas::vector<T>;
 
+extern bool DEBUG_MODE;
+
 namespace Func {
 
     #define O_SCI 0
@@ -50,8 +52,8 @@ namespace Func {
 
     template <typename T>
     void fill_matrix(matrix<T>& m, ifstream& f) {
-        for (int i = 0; i < m.size1(); ++i) {
-            for (int j = 0; j < m.size2(); ++j)
+        for (uint i = 0; i < m.size1(); ++i) {
+            for (uint j = 0; j < m.size2(); ++j)
                 f >> m(i, j);
         }
     }
@@ -101,21 +103,26 @@ namespace Func {
                 matrix_row<matrix<T>> max_row(m, max_row_ind);
                 max_row.swap(cur_row);
             }
-            print_matrix(m);
-            std::cout << endl;
+            if (DEBUG_MODE){
+                print_matrix(m);
+                std::cout << endl;
+            }
             matrix_row<matrix<T>> step_row(m, i);
             step_row /= (T) step_row(j);
             for (uint k = i + 1; k < m.size1(); ++k) {
                 matrix_row<matrix<T>> div_row(m, k);
-                //std::cout << div_row << endl;
                 div_row -= step_row * ((T) div_row(j));
-                //std::cout << div_row << endl;
             }
+            if (DEBUG_MODE){
+                print_matrix(m);
+                std::cout << endl;
+            }
+        }
+        if (DEBUG_MODE){
+            cout << "Matrix after first step:" << endl;
             print_matrix(m);
             std::cout << endl;
         }
-        print_matrix(m);
-        std::cout << endl;
 
         //check for rows like: 0 0 0 .. 0 1 => no solutions
         for (i = (uint) m.size1(); i-- > 0;){

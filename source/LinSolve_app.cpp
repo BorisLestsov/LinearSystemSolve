@@ -3,6 +3,8 @@
 
 using namespace Func;
 
+bool DEBUG_MODE = true;
+
 int main(int argc, char* argv[]) {
 
     uint m, n;
