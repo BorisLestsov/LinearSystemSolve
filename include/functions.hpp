@@ -31,11 +31,11 @@ namespace Func {
         switch (o_type) {
             case O_SCI:
                 stream << scientific << setprecision(precision);
-                width = precision + 8;
+                width = precision + 10;
                 break;
             case O_FXD:
                 stream << fixed << setprecision(precision);
-                width = precision + 4;
+                width = precision + 6;
                 break;
             default:
                 throw Exception("Wrong output mode");
@@ -72,10 +72,10 @@ namespace Func {
 
     template <typename T>
     boost_vector<T> system_solve(matrix<T>& m){
-
         //1st step - make matrix upper triangular
         uint i, j;
         for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
+            //find non-zero element
             if (m (i, j) == 0) {
                 matrix_row<matrix<T>> zero_row(m, i);
                 bool found = false;
@@ -91,8 +91,18 @@ namespace Func {
                     continue;
                 }
             }
-            /*print_matrix(m);
-            std::cout << endl;*/
+            //find row with min j element and swap it with current row for stability
+            uint max_row_ind = i;
+            for (uint k = i + 1; k < m.size1(); ++k)
+                if ( m(k, j) != 0 && abs(m(k, j)) > abs(m(max_row_ind, j)))
+                    max_row_ind = k;
+            if(max_row_ind != i) {
+                matrix_row<matrix<T>> cur_row(m, i);
+                matrix_row<matrix<T>> max_row(m, max_row_ind);
+                max_row.swap(cur_row);
+            }
+            print_matrix(m);
+            std::cout << endl;
             matrix_row<matrix<T>> step_row(m, i);
             step_row /= (T) step_row(j);
             for (uint k = i + 1; k < m.size1(); ++k) {
@@ -101,43 +111,53 @@ namespace Func {
                 div_row -= step_row * ((T) div_row(j));
                 //std::cout << div_row << endl;
             }
-            /*print_matrix(m);
-            std::cout << endl;*/
+            print_matrix(m);
+            std::cout << endl;
         }
         print_matrix(m);
         std::cout << endl;
 
-        //2nd step
-        if( m(m.size1() - 1, m.size2() - 1) == 0){
-            for (i = (uint) m.size1() - 1; i-- > 0;) {
-                if (m(i, m.size2() - 1) != 0) {
-                    if (m(i, m.size2() - 2) == 0){
-                        cout << "No solutions exist" << endl;
-                        return boost_vector<T>(0);
-                    } else {
-                        cout << "Infinite amount of solutions" << endl;
-                        return boost_vector<T>(0);
+        //check for rows like: 0 0 0 .. 0 1 => no solutions
+        for (i = (uint) m.size1(); i-- > 0;){
+            if (m(i, m.size2() - 1) != 0) {
+                bool found = false;
+                for (j = 0; j < m.size2() - 1; ++j)
+                    if (m(i, j) != 0){
+                        found = true;
+                        break;
                     }
+                if (!found) {
+                    cout << "No solutions exist" << endl;
+                    return boost_vector<T>(0);
                 }
-            }
-        } else {
-            if (m(m.size1() - 1, m.size2() - 2) == 0){
-                cout << "No solutions exist" << endl;
-                return boost_vector<T>(0);
-            } else {
-                boost_vector<T> sol(m.size2() - 1);
-                for (i = (uint) m.size2() - 1; i-- > 0;) {
-                    sol(i) = m(i, m.size2() - 1);
-                    for (j = (uint) m.size2() - 1 ; j-- > i+1;){
-                        sol(i) -= m(i, j) * sol(j);
-                    }
-                }
-                boost_vector<T> vec(sol.size());
-                std::copy(sol.begin(), sol.end(), vec.begin());
-                std::cout << "Solution:" << endl << vec << endl;
-                return vec;
             }
         }
+
+        //Check for zero rows => infinite amount of solutions
+        for (i = (uint) m.size1(); i-- > 0;){
+            bool found = false;
+            for (j = 0; j < m.size2(); ++j)
+                if (m(i, j) != 0){
+                    found = true;
+                    break;
+                }
+            if (!found) {   //zero row?
+                cout << "Infinite amount of solutions" << endl;
+                return boost_vector<T>(0);
+            }
+        }
+
+        boost_vector<T> sol(m.size2() - 1);
+        for (i = (uint) m.size2() - 1; i-- > 0;) {
+            sol(i) = m(i, m.size2() - 1);
+            for (j = (uint) m.size2() - 1 ; j-- > i+1;){
+                sol(i) -= m(i, j) * sol(j);
+            }
+        }
+        boost_vector<T> vec(sol.size());
+        std::copy(sol.begin(), sol.end(), vec.begin());
+        std::cout << "Solution:" << endl << vec << endl;
+        return vec;
     }
 }
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP
