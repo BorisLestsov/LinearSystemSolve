@@ -7,17 +7,27 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <boost/numeric/ublas/storage.hpp>
+#include <ctime>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
 using namespace std;
 using namespace boost::numeric::ublas;
+using namespace boost::random;
 
 template <typename T>
 using boost_vector = boost::numeric::ublas::vector<T>;
 
+typedef     boost::mt19937 RNG_type;
+typedef     boost::random::uniform_real_distribution< > Real_dist;
+
 extern bool DEBUG_MODE;
+extern double RAND_RANGE;
 
 namespace Func {
 
@@ -50,14 +60,32 @@ namespace Func {
         }
     }
 
+
     template <typename T>
-    void fill_matrix(matrix<T>& m, ifstream& f) {
+    void fill_matrix_from_stream(matrix<T> &m, ifstream &f) {
         for (uint i = 0; i < m.size1(); ++i) {
             for (uint j = 0; j < m.size2(); ++j)
                 f >> m(i, j);
         }
     }
 
+
+    template <typename T>
+    void fill_matrix_rand(matrix<T> & m){
+        RNG_type randomNumbergenerator( time(0) );
+        Real_dist uniformDistribution( -RAND_RANGE, +RAND_RANGE );
+
+        boost::variate_generator< RNG_type & , Real_dist >
+                rand( randomNumbergenerator, uniformDistribution );
+
+        for (uint i = 0; i < m.size1(); ++i) {
+            for (uint j = 0; j < m.size2(); ++j)
+                m(i, j) = rand();
+        }
+    }
+
+
+    //It appeared I didn't need these
     template <typename T>
     void swap_matrix_rows(matrix<T>& m, uint i, uint j) {
         matrix_row< matrix<double>> rowa (m, i);
@@ -71,6 +99,7 @@ namespace Func {
         matrix_column< matrix<double>> colb (m, j);
         cola.swap(colb);
     }
+
 
     template <typename T>
     boost_vector<T> system_solve(matrix<T>& m){
@@ -105,7 +134,7 @@ namespace Func {
             }
             if (DEBUG_MODE){
                 print_matrix(m);
-                std::cout << endl;
+                cout << endl;
             }
             matrix_row<matrix<T>> step_row(m, i);
             step_row /= (T) step_row(j);
@@ -115,13 +144,13 @@ namespace Func {
             }
             if (DEBUG_MODE){
                 print_matrix(m);
-                std::cout << endl;
+                cout << endl;
             }
         }
         if (DEBUG_MODE){
             cout << "Matrix after first step:" << endl;
             print_matrix(m);
-            std::cout << endl;
+            cout << endl;
         }
 
         //check for rows like: 0 0 0 .. 0 1 => no solutions
@@ -161,10 +190,24 @@ namespace Func {
                 sol(i) -= m(i, j) * sol(j);
             }
         }
-        boost_vector<T> vec(sol.size());
-        std::copy(sol.begin(), sol.end(), vec.begin());
-        std::cout << "Solution:" << endl << vec << endl;
-        return vec;
+        cout << "Solution:" << endl << sol << endl;
+        return sol;
+    }
+
+
+    template <typename T>
+    void check_solution(matrix<T> & m, boost_vector<T> & sol){
+    	cout << "------A * x-------" << endl;
+    	boost_vector<T> th_b = prod(project(m, range(0, m.size1()), range(0, m.size2() - 1)), sol);
+        cout << th_b << endl;
+        cout << "--------b---------" << endl;
+        matrix_column<matrix<T>> b(m, m.size2() - 1);
+        cout << b << endl;
+        boost_vector<T> abs_err = th_b - b;
+        cout << "Absolute error: " << endl;
+        cout << abs_err << endl;
+        cout << "Norm of difference: " << norm_2(th_b - b) << endl;
     }
 }
+
 #endif //LINEARSYSTEMSOLVE_FUNCTIONS_HPP
