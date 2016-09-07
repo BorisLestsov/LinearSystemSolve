@@ -8,10 +8,12 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/numeric/ublas/storage.hpp>
-#include <ctime>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <boost/lockfree/stack.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -19,6 +21,8 @@
 using namespace std;
 using namespace boost::numeric::ublas;
 using namespace boost::random;
+using namespace boost::lockfree;
+using namespace boost::tuples;
 
 template <typename T>
 using boost_vector = boost::numeric::ublas::vector<T>;
@@ -105,6 +109,7 @@ namespace Func {
     boost_vector<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
         uint i, j;
+        std::vector<boost::tuples::tuple<uint, uint>> swapped;
         for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
             //find non-zero element
             if (m (i, j) == 0) {
@@ -136,6 +141,24 @@ namespace Func {
                 print_matrix(m);
                 cout << endl;
             }
+
+            uint max_col_ind = j;
+            for (uint k = j + 1; k < m.size2() - 1; ++k)
+                if ( m(i, k) != 0 && abs(m(i, k)) > abs(m(i, max_col_ind)))
+                    max_col_ind = k;
+            if(max_col_ind != j) {
+                matrix_column<matrix<T>> cur_col(m, i);
+                matrix_column<matrix<T>> max_col(m, max_col_ind);
+                max_col.swap(cur_col);
+                swapped.push_back(make_tuple<uint, uint>(j, max_col_ind));
+                if (DEBUG_MODE)
+                    cout << i << "  <->  " << max_col_ind << endl;
+            }
+            if (DEBUG_MODE){
+                print_matrix(m);
+                cout << endl;
+            }
+
             matrix_row<matrix<T>> step_row(m, i);
             step_row /= (T) step_row(j);
             for (uint k = i + 1; k < m.size1(); ++k) {
@@ -190,6 +213,18 @@ namespace Func {
                 sol(i) -= m(i, j) * sol(j);
             }
         }
+
+        while (!swapped.empty()){
+            boost::tuples::tuple<uint, uint> tup;
+            tup = swapped.back();
+            uint i = get<0>(tup);
+            uint j = get<1>(tup);
+            T tmp = sol[i];
+            sol[i] = sol[j];
+            sol[j] = tmp;
+            swapped.pop_back();
+        }
+
         cout << "Solution:" << endl << sol << endl;
         return sol;
     }

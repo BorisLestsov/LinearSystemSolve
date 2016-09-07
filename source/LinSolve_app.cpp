@@ -5,16 +5,19 @@ using namespace Func;
 
 typedef float T;
 bool DEBUG_MODE     = false;
-bool PRINT_MODE     = true;
+bool PRINT_MODE     = false;
 bool RAND_MATRIX    = true;
-double RAND_RANGE   = 1e10;
+bool CHECK_MODE     = true;
+double RAND_RANGE   = 1e1;
+#define RAND_N  50
+
 
 int main(int argc, char* argv[]) {
 
     uint m, n;
     if(RAND_MATRIX) {
-        n = 50;
-        m = 51;
+        n = RAND_N;
+        m = n + 1;
     }
         matrix<T> matr;
 
@@ -47,8 +50,11 @@ int main(int argc, char* argv[]) {
      	print_matrix(matr);
     	cout << endl;
     }
-    boost_vector<T> sol = system_solve(matr);
-    if(sol.size() != 0) 
+
+    matrix<T> matr_copy = matr;
+    boost_vector<T> sol = system_solve(matr_copy);
+
+    if(CHECK_MODE && sol.size() != 0)
         check_solution(matr, sol);
 
     return 0;
