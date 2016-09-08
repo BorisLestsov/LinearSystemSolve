@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <stack>
 
 using namespace std;
 using namespace boost::numeric::ublas;
@@ -47,11 +48,11 @@ namespace Func {
         switch (o_type) {
             case O_SCI:
                 stream << scientific << setprecision(precision);
-                width = precision + 10;
+                width = precision + 8 + (uint) log10(RAND_RANGE);
                 break;
             case O_FXD:
                 stream << fixed << setprecision(precision);
-                width = precision + 6;
+                width = precision + 4 + (uint) log10(RAND_RANGE);
                 break;
             default:
                 throw Exception("Wrong output mode");
@@ -109,7 +110,7 @@ namespace Func {
     boost_vector<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
         uint i, j;
-        std::vector<boost::tuples::tuple<uint, uint>> swapped;
+        std::stack<boost::tuples::tuple<uint, uint>> swapped;
         for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
             //find non-zero element
             if (m (i, j) == 0) {
@@ -150,7 +151,7 @@ namespace Func {
                 matrix_column<matrix<T>> cur_col(m, i);
                 matrix_column<matrix<T>> max_col(m, max_col_ind);
                 max_col.swap(cur_col);
-                swapped.push_back(make_tuple<uint, uint>(j, max_col_ind));
+                swapped.push(make_tuple<uint, uint>(j, max_col_ind));
                 if (DEBUG_MODE)
                     cout << i << "  <->  " << max_col_ind << endl;
             }
@@ -216,13 +217,13 @@ namespace Func {
 
         while (!swapped.empty()){
             boost::tuples::tuple<uint, uint> tup;
-            tup = swapped.back();
+            tup = swapped.top();
             uint i = get<0>(tup);
             uint j = get<1>(tup);
             T tmp = sol[i];
             sol[i] = sol[j];
             sol[j] = tmp;
-            swapped.pop_back();
+            swapped.pop();
         }
 
         cout << "Solution:" << endl << sol << endl;

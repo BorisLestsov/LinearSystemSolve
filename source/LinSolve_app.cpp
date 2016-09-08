@@ -1,25 +1,68 @@
 #include "../include/functions.hpp"
-#include <fstream>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 using namespace Func;
 
-typedef float T;
+typedef double T;
 bool DEBUG_MODE     = false;
-bool PRINT_MODE     = false;
-bool RAND_MATRIX    = true;
+bool PRINT_MODE     = true;
+bool RAND_MATRIX    = false;
 bool CHECK_MODE     = true;
 double RAND_RANGE   = 1e1;
-#define RAND_N  50
 
-
-int main(int argc, char* argv[]) {
-
+int main(int argc, const char* argv[]) {
     uint m, n;
-    if(RAND_MATRIX) {
-        n = RAND_N;
-        m = n + 1;
+    ifstream f;
+
+    po::options_description desc{"Allowed options"};
+    desc.add_options()
+            ("help", "Print help information")
+            ("rand", po::value<uint>(), "Randomize matrix")
+            ("range", po::value<double>(), "Set range of random numbers in the matrix")
+            ("debug", "Debug mode")
+            ("noprint", "Don't print matrix")
+            ("input", po::value<string>(), "Input file")
+            ("nocheck", "Don't check solution");
+    po::variables_map vm;
+    po::store(parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        cout << desc << "\n";
+        return 1;
     }
-        matrix<T> matr;
+    if (vm.count("debug")) {
+        DEBUG_MODE = true;
+    }
+    if (vm.count("nocheck")) {
+        CHECK_MODE = false;
+    }
+    if (vm.count("noprint")) {
+        PRINT_MODE = false;
+    }
+    if (vm.count("rand")) {
+        RAND_MATRIX = true;
+        n = vm["rand"].as<uint>();
+    }
+    if (vm.count("range")) {
+        RAND_RANGE = abs(vm["range"].as<double>());
+    }
+    if (vm.count("input")){
+        try {
+            f.open(vm["input"].as<string>(), ifstream::in);
+            if (!f.is_open())
+                throw Exception("Could not open file");
+            f >> n;
+        }
+        catch (Exception &e) {
+            cerr << e.what() << endl;
+            return -1;
+        }
+    }
+    m = n + 1;
+    matrix<T> matr;
 
 
     if (RAND_MATRIX) {
@@ -27,15 +70,6 @@ int main(int argc, char* argv[]) {
         fill_matrix_rand(matr);
     } else {
         try {
-            ifstream f(argv[1], ifstream::in);
-            if (argc != 2)
-                throw Exception("Wrong arguments");
-            if (!f.is_open())
-                throw Exception("Could not open file");
-            f >> n;
-            f >> m;
-            if (m != n + 1)
-                throw Exception("Wrong matrix in file");
             matr = matrix<T>(n, m);
             fill_matrix_from_stream(matr, f);
             f.close();
