@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(LinearSystemSolve)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pg -O2 -lboost_program_options")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -pg -lboost_program_options")
 
-find_package(Boost 1.61.0 COMPONENTS program_options REQUIRED)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 message(STATUS "Lib dir: " ${Boost_LIBRARIES})
 
@@ -17,7 +17,7 @@ set(SOURCE_FILES
         source/Exception.cpp
         source/functions.cpp
         source/LinSolve_app.cpp
-        )
+        Solution.cpp Solution.h)
 
 add_executable(LinearSystemSolve ${SOURCE_FILES})
 target_link_libraries(LinearSystemSolve  ${Boost_LIBRARIES})

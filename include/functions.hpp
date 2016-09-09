@@ -30,6 +30,7 @@ using boost_vector = boost::numeric::ublas::vector<T>;
 
 typedef     boost::mt19937 RNG_type;
 typedef     boost::random::uniform_real_distribution< > Real_dist;
+typedef     std::stack<boost::tuples::tuple<uint, uint>> tuple_stack;
 
 extern bool DEBUG_MODE;
 extern double RAND_RANGE;
@@ -48,11 +49,11 @@ namespace Func {
         switch (o_type) {
             case O_SCI:
                 stream << scientific << setprecision(precision);
-                width = precision + 8 + (uint) log10(RAND_RANGE);
+                width = precision + 12;
                 break;
             case O_FXD:
                 stream << fixed << setprecision(precision);
-                width = precision + 4 + (uint) log10(RAND_RANGE);
+                width = precision + 8;
                 break;
             default:
                 throw Exception("Wrong output mode");
@@ -67,25 +68,31 @@ namespace Func {
 
 
     template <typename T>
-    void fill_matrix_from_stream(matrix<T> &m, ifstream &f) {
-        for (uint i = 0; i < m.size1(); ++i) {
-            for (uint j = 0; j < m.size2(); ++j)
-                f >> m(i, j);
+    void fill_matrix_from_stream(matrix<T> & matr, istream &f) {
+        uint n, m;
+        f >> n;
+        f >> m;
+        matr = matrix<T>(n, m);
+
+        for (uint i = 0; i < matr.size1(); ++i) {
+            for (uint j = 0; j < matr.size2(); ++j)
+                f >> matr(i, j);
         }
     }
 
 
     template <typename T>
-    void fill_matrix_rand(matrix<T> & m){
+    void fill_matrix_rand(matrix<T> & matr, int n, int m, int range){
         RNG_type randomNumbergenerator( time(0) );
-        Real_dist uniformDistribution( -RAND_RANGE, +RAND_RANGE );
+        Real_dist uniformDistribution( -range, +range );
+        matr = matrix<T>(n, m);
 
         boost::variate_generator< RNG_type & , Real_dist >
                 rand( randomNumbergenerator, uniformDistribution );
 
-        for (uint i = 0; i < m.size1(); ++i) {
-            for (uint j = 0; j < m.size2(); ++j)
-                m(i, j) = rand();
+        for (uint i = 0; i < matr.size1(); ++i) {
+            for (uint j = 0; j < matr.size2(); ++j)
+                matr(i, j) = rand();
         }
     }
 
@@ -93,15 +100,15 @@ namespace Func {
     //It appeared I didn't need these
     template <typename T>
     void swap_matrix_rows(matrix<T>& m, uint i, uint j) {
-        matrix_row< matrix<double>> rowa (m, i);
-        matrix_row< matrix<double>> rowb (m, j);
+        matrix_row< matrix<T>> rowa (m, i);
+        matrix_row< matrix<T>> rowb (m, j);
         rowa.swap(rowb);
     }
 
     template <typename T>
     void swap_matrix_columns(matrix<T>& m, uint i, uint j) {
-        matrix_column< matrix<double>> cola (m, i);
-        matrix_column< matrix<double>> colb (m, j);
+        matrix_column< matrix<T>> cola (m, i);
+        matrix_column< matrix<T>> colb (m, j);
         cola.swap(colb);
     }
 
@@ -110,7 +117,7 @@ namespace Func {
     boost_vector<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
         uint i, j;
-        std::stack<boost::tuples::tuple<uint, uint>> swapped;
+        tuple_stack swapped;
         for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
             //find non-zero element
             if (m (i, j) == 0) {
@@ -233,12 +240,8 @@ namespace Func {
 
     template <typename T>
     void check_solution(matrix<T> & m, boost_vector<T> & sol){
-    	cout << "------A * x-------" << endl;
-    	boost_vector<T> th_b = prod(project(m, range(0, m.size1()), range(0, m.size2() - 1)), sol);
-        cout << th_b << endl;
-        cout << "--------b---------" << endl;
         matrix_column<matrix<T>> b(m, m.size2() - 1);
-        cout << b << endl;
+    	boost_vector<T> th_b = prod(project(m, range(0, m.size1()), range(0, m.size2() - 1)), sol);
         boost_vector<T> abs_err = th_b - b;
         cout << "Absolute error: " << endl;
         cout << abs_err << endl;

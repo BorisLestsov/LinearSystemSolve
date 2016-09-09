@@ -7,88 +7,67 @@ using namespace Func;
 
 typedef double T;
 bool DEBUG_MODE     = false;
-bool PRINT_MODE     = true;
-bool RAND_MATRIX    = false;
-bool CHECK_MODE     = true;
-double RAND_RANGE   = 1e1;
+bool RAND_FLAG      = false;
+bool CHECK_FLAG     = true;
 
 int main(int argc, const char* argv[]) {
-    uint m, n;
     ifstream f;
+    matrix<T> matr;
 
     po::options_description desc{"Allowed options"};
     desc.add_options()
             ("help", "Print help information")
-            ("rand", po::value<uint>(), "Randomize matrix")
-            ("range", po::value<double>(), "Set range of random numbers in the matrix")
-            ("debug", "Debug mode")
-            ("noprint", "Don't print matrix")
-            ("input", po::value<string>(), "Input file")
-            ("nocheck", "Don't check solution");
+            ("rand,r", po::value< std::vector<int> >()->multitoken(),
+                 "Randomize system. Arguments are: n, m, range")
+            ("show,s", "Show process of solution")
+            ("noprint", "Don't print system")
+            ("input,i", po::value<string>(), "Input file")
+            ("nocheck", "Don't show error");
     po::variables_map vm;
     po::store(parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    if (vm.count("help")) {
-        cout << desc << "\n";
-        return 1;
-    }
-    if (vm.count("debug")) {
-        DEBUG_MODE = true;
-    }
-    if (vm.count("nocheck")) {
-        CHECK_MODE = false;
-    }
-    if (vm.count("noprint")) {
-        PRINT_MODE = false;
-    }
-    if (vm.count("rand")) {
-        RAND_MATRIX = true;
-        n = vm["rand"].as<uint>();
-    }
-    if (vm.count("range")) {
-        RAND_RANGE = abs(vm["range"].as<double>());
-    }
-    if (vm.count("input")){
-        try {
+    try {
+        if (vm.count("help")) {
+            cout << desc << endl;
+            return 1;
+        }
+        if (vm.count("debug")) {
+            DEBUG_MODE = true;
+        }
+        if (vm.count("nocheck")) {
+            CHECK_FLAG = true;
+        }
+        if (vm.count("rand")) {
+            std::vector<int> v = vm["rand"].as< std::vector<int> >();
+            if (v.size() != 3)
+                throw Exception("Wrong Arguments: Expected 3 arguments after --rand");
+            RAND_FLAG = true;
+            fill_matrix_rand(matr, v[0], v[1], v[2]);
+        }
+        if (vm.count("input")) {
+            if(vm.count("rand"))
+                throw Exception("Wrong arguments: --input and --rand at the same time");
             f.open(vm["input"].as<string>(), ifstream::in);
             if (!f.is_open())
                 throw Exception("Could not open file");
-            f >> n;
-        }
-        catch (Exception &e) {
-            cerr << e.what() << endl;
-            return -1;
-        }
-    }
-    m = n + 1;
-    matrix<T> matr;
-
-
-    if (RAND_MATRIX) {
-        matr = matrix<T>(n, m);
-        fill_matrix_rand(matr);
-    } else {
-        try {
-            matr = matrix<T>(n, m);
             fill_matrix_from_stream(matr, f);
-            f.close();
+        } else if (!vm.count("rand")) {
+            cout << "Input n, m and n*m numbers: " << endl;
+            fill_matrix_from_stream(matr, cin);
         }
-        catch (Exception &e) {
-            cerr << e.what() << endl;
-            return -1;
+        if (vm.count("noprint")) {
+            print_matrix(matr);
         }
-    }
-
-    if(PRINT_MODE){
-     	print_matrix(matr);
-    	cout << endl;
+    } catch (Exception &e) {
+        cerr << e.what() << endl;
+        return -1;
     }
 
     matrix<T> matr_copy = matr;
     boost_vector<T> sol = system_solve(matr_copy);
 
-    if(CHECK_MODE && sol.size() != 0)
+    if(CHECK_FLAG && sol.size() != 0)
         check_solution(matr, sol);
 
     return 0;
