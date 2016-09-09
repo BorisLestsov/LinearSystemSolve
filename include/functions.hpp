@@ -2,9 +2,10 @@
 #define LINEARSYSTEMSOLVE_FUNCTIONS_HPP
 
 #include "../include/Exception.hpp"
+#include "../include/Solution.hpp"
+
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/numeric/ublas/storage.hpp>
@@ -114,7 +115,7 @@ namespace Func {
 
 
     template <typename T>
-    boost_vector<T> system_solve(matrix<T>& m){
+    Solution<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
         uint i, j;
         tuple_stack swapped;
@@ -195,7 +196,7 @@ namespace Func {
                     }
                 if (!found) {
                     cout << "No solutions exist" << endl;
-                    return boost_vector<T>(0);
+                    return Solution<T>(NO_SOL);
                 }
             }
         }
@@ -210,11 +211,11 @@ namespace Func {
                 }
             if (!found) {   //zero row?
                 cout << "Infinite amount of solutions" << endl;
-                return boost_vector<T>(0);
+                return Solution<T>(INF_SOL);
             }
         }
 
-        boost_vector<T> sol(m.size2() - 1);
+        Solution<T> sol((ulong) m.size2() - 1, ONE_SOL);
         for (i = (uint) m.size2() - 1; i-- > 0;) {
             sol(i) = m(i, m.size2() - 1);
             for (j = (uint) m.size2() - 1 ; j-- > i+1;){
@@ -233,7 +234,6 @@ namespace Func {
             swapped.pop();
         }
 
-        cout << "Solution:" << endl << sol << endl;
         return sol;
     }
 

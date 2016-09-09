@@ -65,7 +65,8 @@ int main(int argc, const char* argv[]) {
     }
 
     matrix<T> matr_copy = matr;
-    boost_vector<T> sol = system_solve(matr_copy);
+    Solution<T> sol = system_solve(matr_copy);
+    cout << "Solution:" << endl << sol << endl;
 
     if(CHECK_FLAG && sol.size() != 0)
         check_solution(matr, sol);

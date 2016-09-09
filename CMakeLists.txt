@@ -14,10 +14,11 @@ link_directories(${Boost_LIBRARY_DIRS})
 set(SOURCE_FILES
         include/Exception.hpp
         include/functions.hpp
+        include/Solution.hpp
         source/Exception.cpp
         source/functions.cpp
         source/LinSolve_app.cpp
-        Solution.cpp Solution.h)
+        )
 
 add_executable(LinearSystemSolve ${SOURCE_FILES})
 target_link_libraries(LinearSystemSolve  ${Boost_LIBRARIES})
