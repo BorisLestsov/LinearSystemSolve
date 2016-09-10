@@ -17,13 +17,15 @@ class Solution: public boost_vector<T> {
     Sol_t sol_type;
 
 public:
-    Solution(boost_vector<T> &) = delete;
-    Solution(ulong dim, Sol_t);
+    Solution();
+    Solution(const boost_vector<T> &) = delete;
+    Solution(ulong dim, Sol_t = NO_SOL);
     Solution(const Solution &);
     Solution(const boost_vector<T> &, Sol_t);
     explicit Solution(Sol_t);
 
     inline Sol_t get_sol_type() const;
+    void set_sol_type(Sol_t);
 
     template <typename Y>
     friend ostream& operator<<(ostream&, const Solution<Y> &);
@@ -70,5 +72,16 @@ template <typename T>
 Sol_t Solution<T>::get_sol_type() const{
     return sol_type;
 }
+
+template <typename T>
+void Solution<T>::set_sol_type(Sol_t s){
+    sol_type = s;
+}
+
+template <typename T>
+Solution<T>::Solution():
+        boost_vector<T>(0),
+        sol_type(NO_SOL)
+{}
 
 #endif //LINEARSYSTEMSOLVE_SOLUTION_H

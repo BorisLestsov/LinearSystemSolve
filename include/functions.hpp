@@ -23,11 +23,11 @@
 #include <fstream>
 #include <stack>
 
-using namespace std;
 using namespace boost::numeric::ublas;
 using namespace boost::random;
 using namespace boost::lockfree;
 using namespace boost::tuples;
+using namespace std;
 
 template <typename T>
 using boost_vector = boost::numeric::ublas::vector<T>;
@@ -70,7 +70,7 @@ namespace Func {
     }
 
     template <typename T>
-    bool real_compare_eq(T p1, T p2){
+    bool eq_safe_compare(T p1, T p2){
         T eps = std::numeric_limits<T>::epsilon() * 10;
         return abs(p1 - p2) <= eps;
     }
@@ -108,13 +108,15 @@ namespace Func {
         }
     }
 
-
-    //It appeared I didn't need these
     template <typename T>
     void swap_matrix_rows(matrix<T>& m, uint i, uint j) {
         matrix_row< matrix<T>> rowa (m, i);
         matrix_row< matrix<T>> rowb (m, j);
         rowa.swap(rowb);
+        if (SHOW_FLAG){
+            cout << "row swap:" << endl;
+            cout << i << "  <->  " << j << endl;
+        }
     }
 
     template <typename T>
@@ -122,111 +124,89 @@ namespace Func {
         matrix_column< matrix<T>> cola (m, i);
         matrix_column< matrix<T>> colb (m, j);
         cola.swap(colb);
+        if (SHOW_FLAG){
+            cout << "column swap:" << endl;
+            cout << i << "  <->  " << j << endl;
+        }
     }
 
 
     template <typename T>
     Solution<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
-        uint i, j;
+        uint i;
         tuple_stack swapped;
-        for (i = 0, j = 0; i < m.size1() && j < m.size2() ; ++i, ++j) {
+
+        for (i = 0 ; i < m.size1() && i < m.size2() - 1 ; ++i) {
             //find non-zero element
-            if (real_compare_eq<T>(m(i, j), 0)) {
-                matrix_row<matrix<T>> zero_row(m, i);
+            uint k, j;
+            bool to_div = false;
+            if (eq_safe_compare<T>(m(i, i), 0)) {
+                T max = 0.0;
+                uint maxcol = i, maxrow = i;
                 bool found = false;
-                for (uint k = i + 1; k < m.size1(); ++k)
-                    if (!real_compare_eq<T>(m(k, j), 0)) {
-                        matrix_row<matrix<T>> non_zero_row(m, k);
-                        non_zero_row.swap(zero_row);
-                        found = true;
-                        break;
+                for (k = i; k < m.size1(); ++k) {
+                    for (j = i + 1; j < m.size2() - 1; ++j) {
+                        if (!eq_safe_compare(m(k, j), 0.0) && m(k, j) > max) {
+                            max = m(k, j);
+                            maxcol = j;
+                            maxrow = k;
+                            found = true;
+                        }
                     }
-                if (!found){
-                    --i;
-                    continue;
+                }
+                if (found) {
+                    if(i != maxrow)
+                        swap_matrix_rows(m, i, maxrow);
+                    if(i != maxcol) {
+                        swap_matrix_columns(m, i, maxcol);
+                        swapped.push(make_tuple<uint, uint>(i, maxcol));
+                    }
+                    to_div = true;
+                } else {
+                    to_div = false;
+                    break;
                 }
             }
-            //find row with min j element and swap it with current row for stability
-            uint max_row_ind = i;
-            for (uint k = i + 1; k < m.size1(); ++k)
-                if ( !real_compare_eq<T>(m(k, j), 0) && abs(m(k, j)) > abs(m(max_row_ind, j)))
-                    max_row_ind = k;
-            if(max_row_ind != i) {
-                matrix_row<matrix<T>> cur_row(m, i);
-                matrix_row<matrix<T>> max_row(m, max_row_ind);
-                max_row.swap(cur_row);
+            if (!to_div) {
+                matrix_row<matrix<T>> step_row(m, i);
+                step_row /= (T) step_row(i);
+                for (k = i + 1; k < m.size1(); ++k) {
+                    matrix_row<matrix<T>> div_row(m, k);
+                    div_row -= step_row * ((T) div_row(i));
+                }
             }
-            if (SHOW_FLAG){
-                print_matrix(m);
-                cout << endl;
-            }
-
-            uint max_col_ind = j;
-            for (uint k = j + 1; k < m.size2() - 1; ++k)
-                if ( !real_compare_eq<T>(m(i, k), 0) && abs(m(i, k)) > abs(m(i, max_col_ind)))
-                    max_col_ind = k;
-            if(max_col_ind != j) {
-                matrix_column<matrix<T>> cur_col(m, i);
-                matrix_column<matrix<T>> max_col(m, max_col_ind);
-                max_col.swap(cur_col);
-                swapped.push(make_tuple<uint, uint>(j, max_col_ind));
-                if (SHOW_FLAG)
-                    cout << i << "  <->  " << max_col_ind << endl;
-            }
-            if (SHOW_FLAG){
-                print_matrix(m);
-                cout << endl;
-            }
-
-            matrix_row<matrix<T>> step_row(m, i);
-            step_row /= (T) step_row(j);
-            for (uint k = i + 1; k < m.size1(); ++k) {
-                matrix_row<matrix<T>> div_row(m, k);
-                div_row -= step_row * ((T) div_row(j));
-            }
-            if (SHOW_FLAG){
+            if (SHOW_FLAG) {
                 print_matrix(m);
                 cout << endl;
             }
         }
-        if (SHOW_FLAG){
-            cout << "Matrix after first step:" << endl;
-            print_matrix(m);
-            cout << endl;
-        }
 
-        //check for rows like: 0 0 0 .. 0 1 => no solutions
-        for (i = (uint) m.size1(); i-- > 0;){
-            if (!real_compare_eq<T>(m(i, m.size2() - 1), 0)) {
-                bool found = false;
-                for (j = 0; j < m.size2() - 1; ++j)
-                    if (!real_compare_eq<T>(m(i, j), 0)){
-                        found = true;
-                        break;
-                    }
-                if (!found)
-                    return Solution<T>(NO_SOL);
-            }
-        }
-
-        //Check for zero rows => infinite amount of solutions
-        for (i = (uint) m.size1(); i-- > 0;){
+        // Gauss reverse step
+        Solution<T> sol(m.size1(), ONE_SOL);
+        for (i = (uint) m.size1(); i-- > 0 ;) {
+            uint j;
             bool found = false;
-            for (j = 0; j < m.size2(); ++j)
-                if (m(i, j) != 0){
+            for (j = (uint) m.size2() - 1; j-- > 0;)
+                if (!eq_safe_compare(m(i, j), 0.0)) {
                     found = true;
                     break;
                 }
-            if (!found)   //zero row?
-                return Solution<T>(INF_SOL);
-        }
+            if (!found) {   //zero row
+                if (!eq_safe_compare(m(i, m.size2() - 1), 0.0))
+                    return Solution<T>(NO_SOL);
+                else {      // independent variable
+                    sol[i] = 0;
+                    sol.set_sol_type(INF_SOL);
+                }
+            } else        // normal variable
+                break;
 
-        Solution<T> sol((ulong) m.size2() - 1, ONE_SOL);
-        for (i = (uint) m.size2() - 1; i-- > 0;) {
-            sol(i) = m(i, m.size2() - 1);
-            for (j = (uint) m.size2() - 1 ; j-- > i+1;){
-                sol(i) -= m(i, j) * sol(j);
+        }
+        for (++i; i-- > 0; ){
+            sol[i] = m(i, m.size2() - 1);
+            for (uint j = (uint) m.size2() - 1 ; j-- > i+1;){
+                sol[i] -= m(i, j) * sol[j];
             }
         }
 
