@@ -67,7 +67,7 @@ Solution<T>::Solution(const Solution & s):
 
 template <typename T>
 Solution<T>::Solution(ulong dim, Sol_t t):
-        boost_vector<T>(dim),
+        boost_vector<T>(dim, 0),
         sol_type(t)
 {}
 

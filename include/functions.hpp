@@ -7,9 +7,6 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
-#include <boost/range/algorithm/copy.hpp>
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/lockfree/stack.hpp>
 #include <boost/tuple/tuple.hpp>
 
 // This is for random matrix initialization
@@ -25,7 +22,6 @@
 
 using namespace boost::numeric::ublas;
 using namespace boost::random;
-using namespace boost::lockfree;
 using namespace boost::tuples;
 using namespace std;
 
@@ -190,18 +186,19 @@ namespace Func {
                     found = true;
                     break;
                 }
-            if (!found) {   //zero row
+            if (!found) {   //zero row of variables
                 if (!eq_safe_compare(m(i, m.size2() - 1), 0.0))
                     return Solution<T>(NO_SOL);
             } else        // normal variable
                 break;
 
         }
-        if (i < m.size2() - 2 )
+        uint last_non_zero_row = i;
+        if (last_non_zero_row < m.size2() - 2 )
             sol.set_sol_type(INF_SOL);
-        for (++i; i-- > 0; ){
+        for (i = last_non_zero_row + 1; i-- > 0; ){
             sol[i] = m(i, m.size2() - 1);
-            for (uint j = (uint) m.size2() - 1 ; j-- > i+1;){
+            for (uint j = last_non_zero_row + 1 ; j-- > i+1;){
                 sol[i] -= m(i, j) * sol[j];
             }
         }
