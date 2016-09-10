@@ -16,7 +16,6 @@ set(SOURCE_FILES
         include/functions.hpp
         include/Solution.hpp
         source/Exception.cpp
-        source/functions.cpp
         source/LinSolve_app.cpp
         )
 

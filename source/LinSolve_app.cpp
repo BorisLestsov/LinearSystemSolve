@@ -6,7 +6,7 @@ namespace po = boost::program_options;
 using namespace Func;
 
 typedef double T;
-bool DEBUG_MODE     = false;
+bool SHOW_FLAG      = false;
 bool RAND_FLAG      = false;
 bool CHECK_FLAG     = true;
 
@@ -32,8 +32,8 @@ int main(int argc, const char* argv[]) {
             cout << desc << endl;
             return 1;
         }
-        if (vm.count("debug")) {
-            DEBUG_MODE = true;
+        if (vm.count("show")) {
+            SHOW_FLAG = true;
         }
         if (vm.count("nocheck")) {
             CHECK_FLAG = true;
@@ -66,7 +66,7 @@ int main(int argc, const char* argv[]) {
 
     matrix<T> matr_copy = matr;
     Solution<T> sol = system_solve(matr_copy);
-    cout << "Solution:" << endl << sol << endl;
+    cout << sol << endl;
 
     if(CHECK_FLAG && sol.size() != 0)
         check_solution(matr, sol);

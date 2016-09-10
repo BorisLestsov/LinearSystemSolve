@@ -4,10 +4,13 @@
 #include <iostream>
 #include <boost/numeric/ublas/vector.hpp>
 
+using namespace std;
+
 template <typename T>
 using boost_vector = boost::numeric::ublas::vector<T>;
 
 typedef enum {NO_SOL, ONE_SOL, INF_SOL} Sol_t;
+
 
 template <typename T>
 class Solution: public boost_vector<T> {
@@ -18,13 +21,26 @@ public:
     Solution(ulong dim, Sol_t);
     Solution(const Solution &);
     Solution(const boost_vector<T> &, Sol_t);
-    Solution(Sol_t);
+    explicit Solution(Sol_t);
 
+    inline Sol_t get_sol_type() const;
 
-    Sol_t get_sol_type() const;
+    template <typename Y>
+    friend ostream& operator<<(ostream&, const Solution<Y> &);
 };
 
-
+template <typename T>
+ostream& operator<<(ostream& o, const Solution<T> & s){
+    if (s.get_sol_type() == NO_SOL)
+        cout << "No solution" << endl;
+    else {
+        if (s.get_sol_type() == INF_SOL)
+            cout << "Infinite amount of solutions" << endl;
+        boost_vector<T> v = s;
+        o << "Solution" << endl << v << endl;
+    }
+    return o;
+}
 
 template <typename T>
 Solution<T>::Solution(const boost_vector<T> & v, Sol_t t):

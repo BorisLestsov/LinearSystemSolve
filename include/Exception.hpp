@@ -6,14 +6,16 @@
 
 using namespace std;
 
-class Exception: public exception{
-    char* err_msg;
+class Exception : public exception {
+    char *err_msg;
 public:
-    Exception(const char*);
-    Exception(const Exception&);
+    Exception(const char *);
+
+    Exception(const Exception &);
+
     ~Exception();
 
-    const char* what() const noexcept override;
+    const char *what() const noexcept override;
 };
 
 

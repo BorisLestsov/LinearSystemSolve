@@ -7,7 +7,6 @@
       <sourceFolder url="file://$MODULE_DIR$/include/Solution.hpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/source/LinSolve_app.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/source/functions.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/source/Exception.cpp" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
