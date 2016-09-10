@@ -33,13 +33,22 @@ public:
 
 template <typename T>
 ostream& operator<<(ostream& o, const Solution<T> & s){
-    if (s.get_sol_type() == NO_SOL)
-        cout << "No solution" << endl;
-    else {
-        if (s.get_sol_type() == INF_SOL)
+    switch (s.get_sol_type()) {
+        case NO_SOL: {
+            cout << "No solution" << endl;
+            break;
+        }
+        case ONE_SOL: {
+            cout << "One solution" << endl;
+            boost_vector<T> v = s;
+            o << "Solution" << endl << v << endl;
+            break;
+        }
+        case INF_SOL: {
             cout << "Infinite amount of solutions" << endl;
-        boost_vector<T> v = s;
-        o << "Solution" << endl << v << endl;
+            boost_vector<T> v = s;
+            o << "Solution" << endl << v << endl;
+        }
     }
     return o;
 }

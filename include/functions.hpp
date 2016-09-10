@@ -130,7 +130,6 @@ namespace Func {
         }
     }
 
-
     template <typename T>
     Solution<T> system_solve(matrix<T>& m){
         //1st step - make matrix upper triangular
@@ -138,56 +137,55 @@ namespace Func {
         tuple_stack swapped;
 
         for (i = 0 ; i < m.size1() && i < m.size2() - 1 ; ++i) {
-            //find non-zero element
+            //find max element
             uint k, j;
-            bool to_div = false;
-            if (eq_safe_compare<T>(m(i, i), 0)) {
-                T max = 0.0;
-                uint maxcol = i, maxrow = i;
-                bool found = false;
-                for (k = i; k < m.size1(); ++k) {
-                    for (j = i + 1; j < m.size2() - 1; ++j) {
-                        if (!eq_safe_compare(m(k, j), 0.0) && m(k, j) > max) {
-                            max = m(k, j);
-                            maxcol = j;
-                            maxrow = k;
-                            found = true;
-                        }
+            T max = abs(m(i, i));
+            uint maxcol = i, maxrow = i;
+            bool found = false;
+            for (k = i; k < m.size1(); ++k) {
+                for (j = i + 1; j < m.size2() - 1; ++j) {
+                    if (!eq_safe_compare(m(k, j), 0.0) && abs(m(k, j)) > max) {
+                        max = m(k, j);
+                        maxcol = j;
+                        maxrow = k;
+                        found = true;
                     }
-                }
-                if (found) {
-                    if(i != maxrow)
-                        swap_matrix_rows(m, i, maxrow);
-                    if(i != maxcol) {
-                        swap_matrix_columns(m, i, maxcol);
-                        swapped.push(make_tuple<uint, uint>(i, maxcol));
-                    }
-                    to_div = true;
-                } else {
-                    to_div = false;
-                    break;
                 }
             }
-            if (!to_div) {
+            if (found || !eq_safe_compare(m(i, i), 0.0)) {
+                if (i != maxrow)
+                    swap_matrix_rows(m, i, maxrow);
+                if (i != maxcol) {
+                    swap_matrix_columns(m, i, maxcol);
+                    swapped.push(make_tuple<uint, uint>(i, maxcol));
+                }
+                if (SHOW_FLAG) {
+                    print_matrix(m);
+                    cout << endl;
+                }
                 matrix_row<matrix<T>> step_row(m, i);
                 step_row /= (T) step_row(i);
+                if (SHOW_FLAG) {
+                    print_matrix(m);
+                    cout << endl;
+                }
                 for (k = i + 1; k < m.size1(); ++k) {
                     matrix_row<matrix<T>> div_row(m, k);
                     div_row -= step_row * ((T) div_row(i));
                 }
-            }
-            if (SHOW_FLAG) {
-                print_matrix(m);
-                cout << endl;
-            }
+                if (SHOW_FLAG) {
+                    print_matrix(m);
+                    cout << endl;
+                }
+            } else break;
         }
 
         // Gauss reverse step
-        Solution<T> sol(m.size1(), ONE_SOL);
-        for (i = (uint) m.size1(); i-- > 0 ;) {
-            uint j;
+        Solution<T> sol(m.size2() - 1, ONE_SOL);
+        for (i = (uint) m.size1() ; i-- > 0 ;) {
+            int j;
             bool found = false;
-            for (j = (uint) m.size2() - 1; j-- > 0;)
+            for (j = (int) m.size2() - 1; j-- > 0;)
                 if (!eq_safe_compare(m(i, j), 0.0)) {
                     found = true;
                     break;
@@ -195,14 +193,12 @@ namespace Func {
             if (!found) {   //zero row
                 if (!eq_safe_compare(m(i, m.size2() - 1), 0.0))
                     return Solution<T>(NO_SOL);
-                else {      // independent variable
-                    sol[i] = 0;
-                    sol.set_sol_type(INF_SOL);
-                }
             } else        // normal variable
                 break;
 
         }
+        if (i < m.size2() - 2 )
+            sol.set_sol_type(INF_SOL);
         for (++i; i-- > 0; ){
             sol[i] = m(i, m.size2() - 1);
             for (uint j = (uint) m.size2() - 1 ; j-- > i+1;){
@@ -231,7 +227,7 @@ namespace Func {
         boost_vector<T> abs_err = th_b - b;
         cout << "Absolute error: " << endl;
         cout << abs_err << endl;
-        cout << "Norm of difference: " << norm_2(th_b - b) << endl;
+        cout << "Norm of error: " << norm_2(th_b - b) << endl;
     }
 }
 

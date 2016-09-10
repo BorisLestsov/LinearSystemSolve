@@ -56,8 +56,9 @@ int main(int argc, const char* argv[]) {
             cout << "Input n, m and n*m numbers: " << endl;
             fill_matrix_from_stream(matr, cin);
         }
-        if (vm.count("noprint")) {
+        if (!vm.count("noprint")) {
             print_matrix(matr);
+            cout << endl;
         }
     } catch (Exception &e) {
         cerr << e.what() << endl;
@@ -68,7 +69,7 @@ int main(int argc, const char* argv[]) {
     Solution<T> sol = system_solve(matr_copy);
     cout << sol << endl;
 
-    if(CHECK_FLAG && sol.size() != 0)
+    if(CHECK_FLAG && sol.get_sol_type() != NO_SOL)
         check_solution(matr, sol);
 
     return 0;
